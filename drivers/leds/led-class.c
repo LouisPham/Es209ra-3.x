@@ -303,6 +303,15 @@ void led_blink_set(struct led_classdev *led_cdev,
 }
 EXPORT_SYMBOL(led_blink_set);
 
+# ifdef CONFIG_MACH_ES209RA
+/*void led_brightness_set(struct led_classdev *led_cdev,
+			enum led_brightness brightness)
+{
+	led_stop_software_blink(led_cdev);
+	led_cdev->brightness_set(led_cdev, brightness);
+}
+EXPORT_SYMBOL(led_brightness_set);*/
+# else
 void led_brightness_set(struct led_classdev *led_cdev,
 			enum led_brightness brightness)
 {
@@ -310,6 +319,7 @@ void led_brightness_set(struct led_classdev *led_cdev,
 	led_cdev->brightness_set(led_cdev, brightness);
 }
 EXPORT_SYMBOL(led_brightness_set);
+# endif
 
 static int __init leds_init(void)
 {

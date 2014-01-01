@@ -3089,8 +3089,12 @@ static int msmsdcc_enable(struct mmc_host *mmc)
 	msmsdcc_pm_qos_update_latency(host, 1);
 
 	if (mmc->card && mmc_card_sdio(mmc->card)) {
+# ifdef CONFIG_MACH_ES209RA
+		goto out;
+# else
 		rc = 0;
 		goto out;
+# endif
 	}
 
 	spin_lock_irqsave(&host->lock, flags);

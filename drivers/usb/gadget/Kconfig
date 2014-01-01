@@ -702,6 +702,11 @@ choice
 
 # this first set of drivers all depend on bulk-capable hardware.
 
+config USB_AUDIO
+	tristate "USB Audio"
+	help
+	  Gadget Function Driver for USB audio source device 
+
 config USB_ZERO
 	tristate "Gadget Zero (DEVELOPMENT)"
 	help

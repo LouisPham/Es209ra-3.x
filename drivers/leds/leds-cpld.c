@@ -180,8 +180,13 @@ static struct device_attribute dev_attr_blink_all = {
 	.store = cpldled_blink_all_store,
 };
 
+# ifdef CONFIG_MACH_ES209RA
+void led_brightness_set(struct led_classdev *led_cdev,
+			       enum led_brightness brightness)
+# else
 static void led_brightness_set(struct led_classdev *led_cdev,
 			       enum led_brightness brightness)
+# endif
 {
 	struct CPLD_LED_data *CPLD_LED;
 	int idx = 2;

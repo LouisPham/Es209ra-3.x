@@ -1720,11 +1720,11 @@ irqreturn_t mdp_isr(int irq, void *ptr)
 
 		if (!mdp_interrupt)
 			break;
-
+#ifdef CONFIG_FB_MSM_MDP303
 	/*Primary Vsync interrupt*/
 	if (mdp_interrupt & MDP_PRIM_RDPTR)
 		vsync_isr_handler();
-
+#endif
 		/* DMA3 TV-Out Start */
 		if (mdp_interrupt & TV_OUT_DMA3_START) {
 			/* let's disable TV out interrupt */
@@ -1773,7 +1773,7 @@ irqreturn_t mdp_isr(int irq, void *ptr)
 				dma->waiting = FALSE;
 				complete(&dma->comp);
 			}
-
+#ifdef CONFIG_FB_MSM_MDP303
 			if (vsync_cntrl.vsync_irq_enabled)
 				vsync_isr_handler();
 
@@ -1781,6 +1781,7 @@ irqreturn_t mdp_isr(int irq, void *ptr)
 				mdp_intr_mask &= ~LCDC_FRAME_START;
 				outp32(MDP_INTR_ENABLE, mdp_intr_mask);
 			}
+#endif
 		}
 
 		/* DMA2 LCD-Out Complete */
@@ -1991,7 +1992,7 @@ static int mdp_off(struct platform_device *pdev)
 
 	pr_debug("%s:+\n", __func__);
 	mdp_histogram_ctrl_all(FALSE);
-
+#ifdef CONFIG_FB_MSM_MDP40
 	mdp_clk_ctrl(1);
 	if (mfd->panel.type == MIPI_CMD_PANEL)
 		mdp4_dsi_cmd_off(pdev);
@@ -2001,7 +2002,7 @@ static int mdp_off(struct platform_device *pdev)
 			mfd->panel.type == LCDC_PANEL ||
 			mfd->panel.type == LVDS_PANEL)
 		mdp4_lcdc_off(pdev);
-
+#endif
 	mdp_pipe_ctrl(MDP_CMD_BLOCK, MDP_BLOCK_POWER_ON, FALSE);
 	ret = panel_next_off(pdev);
 	mdp_pipe_ctrl(MDP_CMD_BLOCK, MDP_BLOCK_POWER_OFF, FALSE);
@@ -2015,42 +2016,30 @@ static int mdp_off(struct platform_device *pdev)
 
 static int mdp_on(struct platform_device *pdev)
 {
+#ifdef MDP_HW_VSYNC
+	struct msm_fb_data_type *mfd = platform_get_drvdata(pdev);
+#endif
+
 	int ret = 0;
-	struct msm_fb_data_type *mfd;
-	mfd = platform_get_drvdata(pdev);
+#if defined(CONFIG_FB_MSM_MDDI_TMD_NT35580)
+	int i;
+#endif
 
-	pr_debug("%s:+\n", __func__);
+#ifdef MDP_HW_VSYNC
+	mdp_hw_vsync_clk_enable(mfd);
+#endif
 
-	if (mdp_rev >= MDP_REV_40) {
-		mdp_pipe_ctrl(MDP_CMD_BLOCK, MDP_BLOCK_POWER_ON, FALSE);
-		mdp_clk_ctrl(1);
-		mdp4_hw_init();
-		outpdw(MDP_BASE + 0x0038, mdp4_display_intf);
-		if (mfd->panel.type == MIPI_CMD_PANEL) {
-			mdp_vsync_cfg_regs(mfd, FALSE);
-			mdp4_dsi_cmd_on(pdev);
-		} else if (mfd->panel.type == MIPI_VIDEO_PANEL) {
-			mdp4_dsi_video_on(pdev);
-		} else if (mfd->panel.type == HDMI_PANEL ||
-				mfd->panel.type == LCDC_PANEL ||
-				mfd->panel.type == LVDS_PANEL) {
-			mdp4_lcdc_on(pdev);
-		}
-
-		mdp_clk_ctrl(0);
-		mdp_pipe_ctrl(MDP_CMD_BLOCK, MDP_BLOCK_POWER_OFF, FALSE);
-	}
-
-	if ((mdp_rev == MDP_REV_303) &&
-			(mfd->panel.type == MIPI_CMD_PANEL))
-		vsync_cntrl.dev = mfd->fbi->dev;
-
+#if defined(CONFIG_FB_MSM_MDDI_TMD_NT35580)
+	mutex_lock(&mdp_on_mutex);
 	mdp_pipe_ctrl(MDP_CMD_BLOCK, MDP_BLOCK_POWER_ON, FALSE);
-	ret = panel_next_on(pdev);
+	for (i = 0; i < MDP_CCS_SIZE; i++)
+		writel(mdp_ccs_yuv2rgb.ccs[i], MDP_CSC_PRMVn(i));
+	for (i = 0; i < MDP_BV_SIZE; i++)
+		writel(mdp_ccs_yuv2rgb.bv[i], MDP_CSC_PRE_BV1n(i));
 	mdp_pipe_ctrl(MDP_CMD_BLOCK, MDP_BLOCK_POWER_OFF, FALSE);
-
-	mdp_histogram_ctrl_all(TRUE);
-	pr_debug("%s:-\n", __func__);
+	mutex_unlock(&mdp_on_mutex);
+#endif
+	ret = panel_next_on(pdev);
 
 	return ret;
 }
@@ -2750,7 +2739,9 @@ static void mdp_early_suspend(struct early_suspend *h)
 #ifdef CONFIG_FB_MSM_DTV
 	mdp4_dtv_set_black_screen();
 #endif
+#ifdef CONFIG_FB_MSM_MDP40
 	mdp4_iommu_detach();
+#endif
 	mdp_footswitch_ctrl(FALSE);
 }
 

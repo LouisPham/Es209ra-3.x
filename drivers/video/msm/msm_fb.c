@@ -40,6 +40,7 @@
 #include <linux/android_pmem.h>
 #include <linux/leds.h>
 #include <linux/pm_runtime.h>
+#include <video/msm_hdmi_modes.h>
 
 #define MSM_FB_C
 #include "msm_fb.h"
@@ -382,8 +383,9 @@ static int msm_fb_probe(struct platform_device *pdev)
 #ifdef CONFIG_FB_MSM_OVERLAY
 	mfd->overlay_play_enable = 1;
 #endif
-
+#ifdef CONFIG_FB_MSM_MDP40
 	bf_supported = mdp4_overlay_borderfill_supported();
+#endif
 
 	rc = msm_fb_register(mfd);
 	if (rc)

@@ -54,7 +54,9 @@
 #include "f_rmnet_smd_sdio.c"
 #include "f_rmnet.c"
 
+#ifdef CONFIG_USB_AUDIO
 #include "f_audio_source.c"
+#endif
 #include "f_mass_storage.c"
 #include "u_serial.c"
 #include "u_sdio.c"
@@ -1254,6 +1256,7 @@ static struct android_usb_function accessory_function = {
 	.ctrlrequest	= accessory_function_ctrlrequest,
 };
 
+#ifdef CONFIG_USB_AUDIO
 static int audio_source_function_init(struct android_usb_function *f,
 			struct usb_composite_dev *cdev)
 {
@@ -1315,6 +1318,7 @@ static struct android_usb_function audio_source_function = {
 	.unbind_config	= audio_source_function_unbind_config,
 	.attributes	= audio_source_function_attributes,
 };
+#endif
 
 static struct android_usb_function *supported_functions[] = {
 	&rmnet_smd_function,
@@ -1332,7 +1336,9 @@ static struct android_usb_function *supported_functions[] = {
 	&mass_storage_function,
 	&cdrom_function,
 	&accessory_function,
+#ifdef CONFIG_USB_AUDIO
 	&audio_source_function,
+#endif
 	NULL
 };
 
